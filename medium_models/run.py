@@ -1041,7 +1041,11 @@ def main():
                 
                 # Now we just reload this from memory instead of disk <-- much faster
                 trainer.model.load_state_dict(trainer.best_model_ckpt)
-
+    
+    save_directory = "./output_model"
+    trainer.save_model(save_directory)
+    tokenizer.save_pretrained(save_directory)
+    
     # Evaluation
     final_result = {
         'time': str(datetime.today()),
