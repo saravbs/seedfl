@@ -857,6 +857,7 @@ class Trainer(LinearHeadTrainer):
 
         output = self.prediction_loop(eval_dataloader, description="Evaluation")
 
+        # Log evaluation metrics
         self.log(output.metrics)
         logger.info(output.metrics)
 
@@ -865,3 +866,22 @@ class Trainer(LinearHeadTrainer):
             xm.master_print(met.metrics_report())
 
         return output
+
+    def log(self, logs: Dict[str, float]) -> None:
+        """
+        Log `logs` on the various objects watching training.
+        """
+        if self.state.epoch is not None:
+            logs["epoch"] = round(self.state.epoch, 2)
+
+        output = {**logs, **{"step": self.state.global_step}}
+        
+        # Write to client.txt
+        with open('evaldata.txt', 'a') as f:
+            if 'eval_loss' in logs:
+                f.write(f"Step {self.state.global_step}, Eval Loss: {logs['eval_loss']}\n")
+            if 'eval_acc' in logs:
+                f.write(f"Step {self.state.global_step}, Eval Accuracy: {logs['eval_acc']}\n")
+        
+        self.state.log_history.append(output)
+        self.control = self.callback_handler.on_log(self.args, self.state, self.control, logs)
